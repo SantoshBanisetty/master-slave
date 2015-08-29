@@ -15,6 +15,7 @@
 
 ros::Publisher velocity_publisher;
 void move(double speed, double distance, bool isForward);
+void rotate (double angular_speed, double relative_angle, bool clockwise);
 /**
  * This tutorial demonstrates simple sending of messages over the ROS system.
  */
@@ -62,6 +63,7 @@ int main(int argc, char **argv)
 while (ros::ok())
 {
 move (2.0, 5.0, 1);
+rotate (2.0, 5.0, 1);
 }
  
 
@@ -98,3 +100,36 @@ void move(double speed, double distance, bool isForward){
 
 }
 
+/**
+ *  makes the robot turn with a certain angular velocity, for 
+ *  a certain distance in either clockwise or counter-clockwise direction  
+ */
+void rotate (double angular_speed, double relative_angle, bool clockwise){
+
+	geometry_msgs::Twist vel_msg;
+	   //set a random linear velocity in the x-axis
+	   vel_msg.linear.x =0;
+	   vel_msg.linear.y =0;
+	   vel_msg.linear.z =0;
+	   //set a random angular velocity in the y-axis
+	   vel_msg.angular.x = 0;
+	   vel_msg.angular.y = 0;
+	   if (clockwise)
+	   		   vel_msg.angular.z =-abs(angular_speed);
+	   	   else
+	   		   vel_msg.angular.z =abs(angular_speed);
+
+	   double t0 = ros::Time::now().toSec();
+	   double current_angle = 0.0;
+	   ros::Rate loop_rate(1000);
+	   do{
+		   velocity_publisher.publish(vel_msg);
+		   double t1 = ros::Time::now().toSec();
+		   current_angle = angular_speed * (t1-t0);
+		   ros::spinOnce();
+		   loop_rate.sleep();
+		   //cout<<(t1-t0)<<", "<<current_angle <<", "<<relative_angle<<endl;
+	   }while(current_angle<relative_angle);
+	   vel_msg.angular.z =0;
+	   velocity_publisher.publish(vel_msg);
+}
