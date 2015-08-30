@@ -6,8 +6,7 @@
  */
 
 //Master node should guide the master robot autonomously without bumping into
-//objects and should publish master robot's position every second(which will be
-//subscribed by the slave robot in the Slave node )
+//objects and the slave should subscribe for master position)
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "geometry_msgs/Twist.h"
@@ -44,7 +43,7 @@ int main(int argc, char **argv)
   while (ros::ok())
   {
 	move (2.0, 5.0, 1);
-	rotate (2.0, 5.0, 1);
+	rotate (2.0, 90.0, 1);
   }
  
   ros::spin();
