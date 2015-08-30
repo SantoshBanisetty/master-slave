@@ -27,6 +27,8 @@ double spX;
 double spY;
 double soZ;
 
+double distance, angle;
+
 ros::Publisher velocity_publisher;
 //Function declerations of move and rotate
 void move(double speed, double distance, bool isForward);
@@ -38,10 +40,9 @@ double degrees2radians(double angle_in_degrees);
 
 void masterPoseCallBack(const nav_msgs::Odometry::ConstPtr & master_pose);
 void slavePoseCallBack(const nav_msgs::Odometry::ConstPtr & slave_pose);
-//void goToGoal(const std_msgs::String::ConstPtr& msg)
-//{
-//  ROS_INFO("I heard: [%s]", msg->data.c_str());
-//}
+
+double desireOrientation (double xM, double yM, double xS, double yS);
+void goToGoal(void);
 
 int main(int argc, char **argv)
 {
@@ -50,15 +51,20 @@ int main(int argc, char **argv)
 
   ros::NodeHandle slaveNode;
 
-  velocity_publisher = slaveNode.advertise<geometry_msgs::Twist>("/robot_1/cmd_vel", 1000);
+  velocity_publisher = slaveNode.advertise<geometry_msgs::Twist>("/robot_1/cmd_vel", 1);
   //ros::Subscriber slave_sub = slaveNode.subscribe("myPose", 1000, goToGoal);
-  ros::Subscriber master_pose = slaveNode.subscribe("/robot_0/base_pose_ground_truth", 100, masterPoseCallBack);
-  ros::Subscriber slave_pose = slaveNode.subscribe("/robot_1/base_pose_ground_truth", 100, slavePoseCallBack);
+  ros::Subscriber master_pose = slaveNode.subscribe("/robot_0/base_pose_ground_truth", 1, masterPoseCallBack);
+  ros::Subscriber slave_pose = slaveNode.subscribe("/robot_1/base_pose_ground_truth", 1, slavePoseCallBack);
 // just for testing
+
+ros::Rate loop_rate(1000);
   while (ros::ok())
   {
-  	move (2.0, 5.0, 1);
-  	rotate (2.0, 180.0, 1);
+  	//move (1.0, 1.0, 1);
+  	
+	goToGoal();
+	ros::spinOnce();
+	loop_rate.sleep();
   }
  
   ros::spin();
@@ -86,7 +92,7 @@ void move(double speed, double distance, bool isForward){
 
    double t0 = ros::Time::now().toSec();
    double current_distance = 0.0;
-   ros::Rate loop_rate(100);
+   ros::Rate loop_rate(10000);
    do{
 	   velocity_publisher.publish(vel_msg);
 	   double t1 = ros::Time::now().toSec();
@@ -121,7 +127,7 @@ relative_angle = degrees2radians(relative_angle);
 
 	   double t0 = ros::Time::now().toSec();
 	   double current_angle = 0.0;
-	   ros::Rate loop_rate(1000);
+	   ros::Rate loop_rate(10000);
 	   do{
 		   velocity_publisher.publish(vel_msg);
 		   double t1 = ros::Time::now().toSec();
@@ -150,6 +156,14 @@ double getDistance(double x1, double y1, double x2, double y2){
 }
 
 /*
+ * Function to calculate desired orientation to reach the master  
+ */
+double desireOrientation (double xM, double yM, double xS, double yS)
+{
+return atan2((yM-yS),(xM-xS));
+}
+
+/*
  * Call back implementation to read and process master robot's position  
  */
 void masterPoseCallBack(const nav_msgs::Odometry::ConstPtr & master_pose)
@@ -175,4 +189,27 @@ soZ = slave_pose->pose.pose.orientation.z;
 ROS_INFO("mpX: [%f]", spX);
 ROS_INFO("mpY: [%f]", spY);
 ROS_INFO("moZ: [%f]", soZ);
+}
+
+
+/*
+ * Go to goal implementaion. may a proportional controller here
+ */
+void goToGoal(void)
+{
+	int Kv=1, Kw=2;
+	double relative_theta;
+	angle = desireOrientation (mpX,mpY,spX,spY);
+	ROS_INFO("Orientation: [%f]", angle);
+	//rotate (5.0, angle-soZ, 1);
+	distance = getDistance(mpX,mpY,spX,spY);
+	ROS_INFO("Distance: [%f]", distance);
+	relative_theta = angle-soZ;
+	double v = Kv*distance;
+	double w = Kw*relative_theta;
+	bool dir = (relative_theta<0)?true:false;
+	ROS_INFO("%f,%f", v,w);
+	rotate (w, angle-soZ, dir);
+	move (v, distance, 1);
+  ROS_INFO("I am in: [%s]", "goal pursuit mode");
 }
