@@ -16,6 +16,17 @@
 #include <sstream>
 
 #define PI 3.14
+/*
+ *Global variables decleartions
+ */
+double mpX;
+double mpY;
+double moZ;
+
+double spX;
+double spY;
+double soZ;
+
 ros::Publisher velocity_publisher;
 //Function declerations of move and rotate
 void move(double speed, double distance, bool isForward);
@@ -24,6 +35,9 @@ void rotate (double angular_speed, double relative_angle, bool clockwise);
 double getDistance(double x1, double y1, double x2, double y2);
 double degrees2radians(double angle_in_degrees);
 
+
+void masterPoseCallBack(const nav_msgs::Odometry::ConstPtr & master_pose);
+void slavePoseCallBack(const nav_msgs::Odometry::ConstPtr & slave_pose);
 //void goToGoal(const std_msgs::String::ConstPtr& msg)
 //{
 //  ROS_INFO("I heard: [%s]", msg->data.c_str());
@@ -38,7 +52,8 @@ int main(int argc, char **argv)
 
   velocity_publisher = slaveNode.advertise<geometry_msgs::Twist>("/robot_1/cmd_vel", 1000);
   //ros::Subscriber slave_sub = slaveNode.subscribe("myPose", 1000, goToGoal);
-
+  ros::Subscriber master_pose = slaveNode.subscribe("/robot_0/base_pose_ground_truth", 100, masterPoseCallBack);
+  ros::Subscriber slave_pose = slaveNode.subscribe("/robot_1/base_pose_ground_truth", 100, slavePoseCallBack);
 // just for testing
   while (ros::ok())
   {
@@ -132,4 +147,32 @@ double degrees2radians(double angle_in_degrees){
  */
 double getDistance(double x1, double y1, double x2, double y2){
 	return sqrt(pow((x1-x2),2)+pow((y1-y2),2));
+}
+
+/*
+ * Call back implementation to read and process master robot's position  
+ */
+void masterPoseCallBack(const nav_msgs::Odometry::ConstPtr & master_pose)
+{
+ROS_INFO("I am in: [%s]", "master call back");
+mpX = master_pose->pose.pose.position.x;
+mpY = master_pose->pose.pose.position.y;
+moZ = master_pose->pose.pose.orientation.z;
+ROS_INFO("mpX: [%f]", mpX);
+ROS_INFO("mpY: [%f]", mpY);
+ROS_INFO("moZ: [%f]", moZ);
+}
+
+/*
+ * Call back implementation to read and process slave robot's position  
+ */
+void slavePoseCallBack(const nav_msgs::Odometry::ConstPtr & slave_pose)
+{
+ROS_INFO("I am in: [%s]", "slave call back");
+spX = slave_pose->pose.pose.position.x;
+spY = slave_pose->pose.pose.position.y;
+soZ = slave_pose->pose.pose.orientation.z;
+ROS_INFO("mpX: [%f]", spX);
+ROS_INFO("mpY: [%f]", spY);
+ROS_INFO("moZ: [%f]", soZ);
 }
