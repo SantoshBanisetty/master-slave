@@ -16,11 +16,16 @@
 
 #define PI 3.14
 
+double lrange=0,crange=0,rrange=0;
+double lintensity=0, cintensity=0, rintensity=0;
+
 ros::Publisher velocity_publisher;
 
 //Function declerations of move and rotate
 void move(double speed, double distance, bool isForward);
 void rotate (double angular_speed, double relative_angle, bool clockwise);
+
+void laserCallBack(const sensor_msgs::LaserScan::ConstPtr & laser_msg);
 
 //Function declearations for equilidian distance and degrees to radians conversion
 double getDistance(double x1, double y1, double x2, double y2);
@@ -32,18 +37,19 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "master");
 
  
-  //ros::NodeHandle masterNode;
-  ros::NodeHandle n;
+  ros::NodeHandle masterNode;
+  //ros::NodeHandle n;
 
  // ros::Publisher master_pub = masterNode.advertise<std_msgs::String>("myPose", 1000);
-  velocity_publisher = n.advertise<geometry_msgs::Twist>("/robot_0/cmd_vel", 1000);
+  velocity_publisher = masterNode.advertise<geometry_msgs::Twist>("/robot_0/cmd_vel", 1000);
+    ros::Subscriber laser = masterNode.subscribe("/robot_0/base_scan", 1, laserCallBack);
   //ros::Rate loop_rate(10);
 
 // just for testing 
   while (ros::ok())
   {
-	move (2.0, 5.0, 1);
-	rotate (2.0, 90.0, 1);
+	move (1.0, 1.0, 1);
+	rotate (1.0, 1.5707, 1);
   }
  
   ros::spin();
@@ -90,7 +96,7 @@ void move(double speed, double distance, bool isForward){
  */
 void rotate (double angular_speed, double relative_angle, bool clockwise){
 //angular_speed = degrees2radians(angular_speed);
-relative_angle = degrees2radians(relative_angle);
+//relative_angle = degrees2radians(relative_angle);
 	geometry_msgs::Twist vel_msg;
 	   //set a random linear velocity in the x-axis
 	   vel_msg.linear.x =0;
@@ -133,3 +139,20 @@ double degrees2radians(double angle_in_degrees){
 double getDistance(double x1, double y1, double x2, double y2){
 	return sqrt(pow((x1-x2),2)+pow((y1-y2),2));
 }
+
+/*
+ * Call back implementation to read and process laser data  
+ */
+void laserCallBack(const sensor_msgs::LaserScan::ConstPtr & laser_msg)
+{
+ROS_INFO("I am in: [%s]", "laser call back");
+lrange = laser_msg->ranges[2];
+crange = laser_msg->ranges[1];
+rrange = laser_msg->ranges[0];
+ROS_INFO("Ranges: left->[%f], center->[%f], right[%f]", lrange, crange, rrange);
+lintensity = laser_msg->intensities[2];
+cintensity = laser_msg->intensities[1];
+rintensity = laser_msg->intensities[0];
+ROS_INFO("Intensities: left->[%f], center->[%f], right[%f]", lintensity, cintensity, rintensity);
+}
+

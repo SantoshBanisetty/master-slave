@@ -29,6 +29,9 @@ double soZ;
 
 double distance, angle;
 
+double lrange=0,crange=0,rrange=0;
+double lintensity=0, cintensity=0, rintensity=0;
+
 ros::Publisher velocity_publisher;
 //Function declerations of move and rotate
 void move(double speed, double distance, bool isForward);
@@ -40,6 +43,7 @@ double degrees2radians(double angle_in_degrees);
 
 void masterPoseCallBack(const nav_msgs::Odometry::ConstPtr & master_pose);
 void slavePoseCallBack(const nav_msgs::Odometry::ConstPtr & slave_pose);
+void laserCallBack(const sensor_msgs::LaserScan::ConstPtr & laser_msg);
 
 double desireOrientation (double xM, double yM, double xS, double yS);
 void goToGoal(void);
@@ -55,7 +59,8 @@ int main(int argc, char **argv)
   //ros::Subscriber slave_sub = slaveNode.subscribe("myPose", 1000, goToGoal);
   ros::Subscriber master_pose = slaveNode.subscribe("/robot_0/base_pose_ground_truth", 1, masterPoseCallBack);
   ros::Subscriber slave_pose = slaveNode.subscribe("/robot_1/base_pose_ground_truth", 1, slavePoseCallBack);
-// just for testing
+  ros::Subscriber laser = slaveNode.subscribe("/robot_1/base_scan", 1, laserCallBack);
+  //just for testing
 
 ros::Rate loop_rate(1000);
   while (ros::ok())
@@ -186,14 +191,29 @@ ROS_INFO("I am in: [%s]", "slave call back");
 spX = slave_pose->pose.pose.position.x;
 spY = slave_pose->pose.pose.position.y;
 soZ = slave_pose->pose.pose.orientation.z;
-ROS_INFO("mpX: [%f]", spX);
-ROS_INFO("mpY: [%f]", spY);
-ROS_INFO("moZ: [%f]", soZ);
+ROS_INFO("spX: [%f]", spX);
+ROS_INFO("spY: [%f]", spY);
+ROS_INFO("soZ: [%f]", soZ);
 }
 
+/*
+ * Call back implementation to read and process laser data  
+ */
+void laserCallBack(const sensor_msgs::LaserScan::ConstPtr & laser_msg)
+{
+ROS_INFO("I am in: [%s]", "laser call back");
+lrange = laser_msg->ranges[2];
+crange = laser_msg->ranges[1];
+rrange = laser_msg->ranges[0];
+ROS_INFO("Ranges: left->[%f], center->[%f], right[%f]", lrange, crange, rrange);
+lintensity = laser_msg->intensities[2];
+cintensity = laser_msg->intensities[1];
+rintensity = laser_msg->intensities[0];
+ROS_INFO("Intensities: left->[%f], center->[%f], right[%f]", lintensity, cintensity, rintensity);
+}
 
 /*
- * Go to goal implementaion. may a proportional controller here
+ * Go to goal implementaion. may be a proportional controller here
  */
 void goToGoal(void)
 {
