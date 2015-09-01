@@ -31,6 +31,9 @@ void laserCallBack(const sensor_msgs::LaserScan::ConstPtr & laser_msg);
 double getDistance(double x1, double y1, double x2, double y2);
 double degrees2radians(double angle_in_degrees);
 
+//Wanader without bumping into obstacles 
+void wander(void);
+
 int main(int argc, char **argv)
 {
  
@@ -43,16 +46,19 @@ int main(int argc, char **argv)
  // ros::Publisher master_pub = masterNode.advertise<std_msgs::String>("myPose", 1000);
   velocity_publisher = masterNode.advertise<geometry_msgs::Twist>("/robot_0/cmd_vel", 1000);
     ros::Subscriber laser = masterNode.subscribe("/robot_0/base_scan", 1, laserCallBack);
-  //ros::Rate loop_rate(10);
+  ros::Rate loop_rate(1);
+
 
 // just for testing 
   while (ros::ok())
   {
-	move (1.0, 1.0, 1);
-	rotate (5.0, 1.5707, 1);
+	//move (1.0, 1.0, 1);
+	rotate (1.0, 0.047, 1);
+loop_rate.sleep();
+//wander();
   }
  
-  ros::spin();
+  ros::spinOnce();
 
   return 0;
 }
@@ -154,5 +160,32 @@ lintensity = laser_msg->intensities[2];
 cintensity = laser_msg->intensities[1];
 rintensity = laser_msg->intensities[0];
 ROS_INFO("Intensities: left->[%f], center->[%f], right[%f]", lintensity, cintensity, rintensity);
+}
+
+/*
+ *"Wander without hiting" anything implementation
+ */
+void wander(void)
+{
+ROS_INFO("I am [%s]", "wandering");
+if (cintensity == 1)//obstacle in front
+{
+if (lrange >= rrange)
+{
+do
+rotate (1.0, 0.5, 0);
+while((cintensity !=0) && (rintensity !=0));
+}
+else if (lrange <= rrange)
+{
+do
+rotate (1.0, 0.5, 1);
+while ((cintensity !=0) && (lintensity !=0));
+}
+}
+else
+{
+move (1.0, 1.0, 1);
+}
 }
 
