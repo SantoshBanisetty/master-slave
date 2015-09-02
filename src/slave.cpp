@@ -27,6 +27,8 @@ double spX;
 double spY;
 double soZ;
 
+double intensities [27];
+double mul = 1; 
 double distance, angle;
 
 double lrange=0,crange=0,rrange=0;
@@ -202,7 +204,7 @@ ROS_INFO("soZ: [%f]", soZ);
 void laserCallBack(const sensor_msgs::LaserScan::ConstPtr & laser_msg)
 {
 ROS_INFO("I am in: [%s]", "laser call back");
-lrange = laser_msg->ranges[2];
+/*lrange = laser_msg->ranges[2];
 crange = laser_msg->ranges[1];
 rrange = laser_msg->ranges[0];
 ROS_INFO("Ranges: left->[%f], center->[%f], right[%f]", lrange, crange, rrange);
@@ -210,6 +212,13 @@ lintensity = laser_msg->intensities[2];
 cintensity = laser_msg->intensities[1];
 rintensity = laser_msg->intensities[0];
 ROS_INFO("Intensities: left->[%f], center->[%f], right[%f]", lintensity, cintensity, rintensity);
+*/
+
+for (int i=0; i<27; i++) // I need not loop to copy, I not familiar with std::vectors
+{
+intensities [i]= laser_msg->intensities[i];
+mul = mul*intensities[i]; //check point if robot is blocked 270 degrees
+}
 }
 
 /*
@@ -217,7 +226,7 @@ ROS_INFO("Intensities: left->[%f], center->[%f], right[%f]", lintensity, cintens
  */
 void goToGoal(void)
 {
-	int Kv=1, Kw=2;
+	double Kv=0.5, Kw=4;
 	double relative_theta;
 	angle = desireOrientation (mpX,mpY,spX,spY);
 	ROS_INFO("Orientation: [%f]", angle);
@@ -227,7 +236,7 @@ void goToGoal(void)
 	relative_theta = angle-soZ;
 	double v = Kv*distance;
 	double w = Kw*relative_theta;
-	bool dir = (relative_theta<0)?true:false;
+	bool dir = (relative_theta<0)?false:true;
 	ROS_INFO("%f,%f", v,w);
 	rotate (w, angle-soZ, dir);
 	move (v, distance, 1);

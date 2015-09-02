@@ -16,8 +16,9 @@
 
 #define PI 3.14
 
-double lrange=0,crange=0,rrange=0;
-double lintensity=0, cintensity=0, rintensity=0;
+
+double intensities[27];
+double mul =1;
 
 ros::Publisher velocity_publisher;
 
@@ -152,14 +153,11 @@ double getDistance(double x1, double y1, double x2, double y2){
 void laserCallBack(const sensor_msgs::LaserScan::ConstPtr & laser_msg)
 {
 ROS_INFO("I am in: [%s]", "laser call back");
-lrange = laser_msg->ranges[2];
-crange = laser_msg->ranges[1];
-rrange = laser_msg->ranges[0];
-ROS_INFO("Ranges: left->[%f], center->[%f], right[%f]", lrange, crange, rrange);
-lintensity = laser_msg->intensities[2];
-cintensity = laser_msg->intensities[1];
-rintensity = laser_msg->intensities[0];
-ROS_INFO("Intensities: left->[%f], center->[%f], right[%f]", lintensity, cintensity, rintensity);
+for (int i=0; i<27; i++) // I need not loop to copy, I not familiar with std::vectors
+{
+intensities [i]= laser_msg->intensities[i];
+mul = mul*intensities[i]; //check point if robot is blocked 270 degrees
+}
 }
 
 /*
@@ -168,24 +166,35 @@ ROS_INFO("Intensities: left->[%f], center->[%f], right[%f]", lintensity, cintens
 void wander(void)
 {
 ROS_INFO("I am [%s]", "wandering");
-if (cintensity == 1)//obstacle in front
+
+int samples = 27;
+int fov = 4.7123;
+double inc = 0.1745; // 270/27 degrees to radians
+int center = samples/2;
+if (mul == 1)// blocked around 270 degrees
 {
-if (lrange >= rrange)
-{
-do
-rotate (1.0, 0.5, 0);
-while((cintensity !=0) && (rintensity !=0));
+rotate(1.0, 3.1415, 1); //about turn
 }
-else if (lrange <= rrange)
+if ((intensities [center-1] == 1)||(intensities [center] == 1)||(intensities [center+1] == 1))// obstacle in front
 {
-do
-rotate (1.0, 0.5, 1);
-while ((cintensity !=0) && (lintensity !=0));
-}
+	for (int i = 2; i< center; i++)
+	{
+		if(intensities [center - i] == 0)// no obstacle
+		{
+		rotate(1.0, (i+1)*inc, 1);
+		break;
+		}
+		else if (intensities [center +i] == 0)// no obstacle
+		{
+		rotate(1.0, (i+1)*inc, 0);
+		break;
+		}
+	}
 }
 else
 {
-move (1.0, 1.0, 1);
+move(1.0, 1.0, 1);
 }
+
 }
 
