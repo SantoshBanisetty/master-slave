@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   nav_msgs
   sensor_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -201,3 +202,7 @@ add_dependencies(master stage_first_generate_messages_cpp)
 add_executable(slave src/slave.cpp)
 target_link_libraries(slave ${catkin_LIBRARIES})
 add_dependencies(slave stage_first_generate_messages_cpp)
+
+add_executable(tf_broadcaster src/tf_broadcaster.cpp)
+target_link_libraries(tf_broadcaster ${catkin_LIBRARIES})
+

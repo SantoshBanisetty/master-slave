@@ -226,7 +226,7 @@ mul = mul*intensities[i]; //check point if robot is blocked 270 degrees
  */
 void goToGoal(void)
 {
-	double Kv=0.5, Kw=4;
+	double Kv=1, Kw=7;
 	double relative_theta;
 	angle = desireOrientation (mpX,mpY,spX,spY);
 	ROS_INFO("Orientation: [%f]", angle);
@@ -236,7 +236,7 @@ void goToGoal(void)
 	relative_theta = angle-soZ;
 	double v = Kv*distance;
 	double w = Kw*relative_theta;
-	bool dir = (relative_theta<0)?false:true;
+	bool dir = (relative_theta<0)?true:false;
 	ROS_INFO("%f,%f", v,w);
 	rotate (w, angle-soZ, dir);
 	move (v, distance, 1);
