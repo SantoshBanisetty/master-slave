@@ -206,3 +206,6 @@ add_dependencies(slave stage_first_generate_messages_cpp)
 add_executable(tf_broadcaster src/tf_broadcaster.cpp)
 target_link_libraries(tf_broadcaster ${catkin_LIBRARIES})
 
+add_executable(slave_tf_listener src/slave_tf_listener.cpp)
+target_link_libraries(slave_tf_listener ${catkin_LIBRARIES})
+
