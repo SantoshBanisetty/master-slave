@@ -9,7 +9,9 @@ assignment
 5. Open a new terminal and source the catkin_ws/devel/setup.bash file
 6. Execute the following command:
    roslaunch stage_first OnYourMarkGetSetGo.launch
-   You should see the blue robot wandering without hitting any obstacles and the green robot following the blue one and avoiding the obstracles along its path.
+   You should see the blue robot wandering without hitting any obstacles and the green robot following the blue one     and avoiding the obstracles along its path.
    
+The link to the video demonstration is https://youtu.be/ono9Ie8n6ok
+
 Happy Coding !! :-)
 
