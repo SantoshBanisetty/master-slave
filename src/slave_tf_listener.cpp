@@ -1,3 +1,12 @@
+/*
+ * slave_tf_listener.cpp
+ *
+ *  Created on: Aug 27, 2015
+ *      Author: santosh
+ */
+
+//Slave follower implementation 
+
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
 #include <geometry_msgs/Twist.h>
@@ -9,11 +18,13 @@ double mul = 1;
 
 ros::Publisher slave_vel;
 
+//Function declerations to avoid, rotate and move
 void avoid(void);
 void rotate (double angular_speed, double relative_angle, bool clockwise);
 void move(double speed, double distance, bool isForward);
 
-void laserCallBack(const sensor_msgs::LaserScan::ConstPtr & laser_msg);
+// Laser call back function decleration
+void laserCallBack(const sensor_msgs::LaserScan::ConstPtr & laser_msg); 
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "my_tf_listener");
@@ -29,22 +40,45 @@ int main(int argc, char** argv){
 
   ros::Rate rate(1000.0);
   while (node.ok()){
-    tf::StampedTransform transform;
+    tf::StampedTransform transformSM;
+    tf::StampedTransform transformMS;
+    //From Slave to master transformation
     try{
       listener.lookupTransform("/robot_1", "/robot_0",
-                               ros::Time(0), transform);
+                               ros::Time(0), transformSM);
     }
     catch (tf::TransformException &ex) {
       ROS_ERROR("%s",ex.what());
       ros::Duration(1.0).sleep();
       continue;
     }
-    avoid();
+    
+    //From Master to Slave transformation
+    try{
+      listener.lookupTransform("/robot_0", "/robot_1",
+                               ros::Time(0), transformMS);
+    }
+    catch (tf::TransformException &ex) {
+      ROS_ERROR("%s",ex.what());
+      ros::Duration(1.0).sleep();
+      continue;
+    }
+    avoid();//function call to avoid obstacles while following the Master
+    
+    //Priting the x, y, and angle "from the robot's perspective" of each robot to the other
+    ROS_INFO("Master pose w.r.t Slave [x, y]: [%f, %f]", transformSM.getOrigin().x(), transformSM.getOrigin().y());
+    ROS_INFO("Orientation: [%f]", atan2(transformSM.getOrigin().y(),
+                                   transformSM.getOrigin().x()));
+    ROS_INFO("---------------------------------------------");
+    ROS_INFO("Slave pose w.r.t Master [x, y]: [%f, %f]", transformMS.getOrigin().x(), transformMS.getOrigin().y());
+    ROS_INFO("Orientation: [%f]", atan2(transformMS.getOrigin().y(),
+                                   transformMS.getOrigin().x()));
+    //Proportional controller to follow the Master (Go to master behaviour)
     geometry_msgs::Twist vel_msg;
-    vel_msg.angular.z = 4.0 * atan2(transform.getOrigin().y(),
-                                   transform.getOrigin().x());
-    vel_msg.linear.x = 0.5 * sqrt(pow(transform.getOrigin().x(), 2) +
-                                  pow(transform.getOrigin().y(), 2));
+    vel_msg.angular.z = 4.0 * atan2(transformSM.getOrigin().y(),
+                                   transformSM.getOrigin().x());
+    vel_msg.linear.x = 0.5 * sqrt(pow(transformSM.getOrigin().x(), 2) +
+                                  pow(transformSM.getOrigin().y(), 2));
     slave_vel.publish(vel_msg);
     ros::spinOnce();
     rate.sleep();
@@ -57,7 +91,7 @@ int main(int argc, char** argv){
  */
 void laserCallBack(const sensor_msgs::LaserScan::ConstPtr & laser_msg)
 {
-ROS_INFO("I am in: [%s]", "laser call back");
+//ROS_INFO("I am in: [%s]", "laser call back");
 
 for (int i=0; i<27; i++) // I need not loop to copy, I not familiar with std::vectors
 {
@@ -67,11 +101,11 @@ mul = mul*intensities[i]; //check point if robot is blocked 270 degrees
 }
 
 /*
- * Go to goal implementaion. may be a proportional controller here
+ * Obstacle avoidance behaviour implementation 
  */
 void avoid(void)
 {
-  ROS_INFO("I am [%s]", "avoiding");
+  //ROS_INFO("I am [%s]", "avoiding");
 
 int samples = 27;
 int fov = 4.7123;
@@ -83,6 +117,7 @@ rotate(1.0, 3.1415, 1); //about turn
 }*/
 if ((intensities [center-1] == 1)||(intensities [center] == 1)||(intensities [center+1] == 1))// obstacle in front
 {
+	//Check one by one on both sides of the robot to determine free space and rotate by the amount scanned in a first free direction
 	for (int i = 2; i< center; i++)
 	{
 		if(intensities [center - i] == 0)// no obstacle
@@ -106,8 +141,8 @@ else
 
 
 /**
- *  makes the robot turn with a certain angular velocity, for 
- *  a certain distance in either clockwise or counter-clockwise direction  
+ *  makes the robot turn with a certain angular velocity, 
+ *  either clockwise or counter-clockwise direction  
  */
 void rotate (double angular_speed, double relative_angle, bool clockwise){
 //angular_speed = degrees2radians(angular_speed);
@@ -120,6 +155,7 @@ void rotate (double angular_speed, double relative_angle, bool clockwise){
 	   //set a random angular velocity in the y-axis
 	   vel_msg.angular.x = 0;
 	   vel_msg.angular.y = 0;
+	   //Control strategy for clockwise and counter-clockwise directions
 	   if (clockwise)
 	   		   vel_msg.angular.z =-abs(angular_speed);
 	   	   else
@@ -128,13 +164,14 @@ void rotate (double angular_speed, double relative_angle, bool clockwise){
 	   double t0 = ros::Time::now().toSec();
 	   double current_angle = 0.0;
 	   ros::Rate loop_rate(1000);
+           //Condition to teminate rotation after rotating to the required orientation 
 	   do{
 		   slave_vel.publish(vel_msg);
 		   double t1 = ros::Time::now().toSec();
 		   current_angle = angular_speed * (t1-t0);
 		   ros::spinOnce();
 		   loop_rate.sleep();
-		   //cout<<(t1-t0)<<", "<<current_angle <<", "<<relative_angle<<endl;
+		   
 	   }while(current_angle<relative_angle);
 	   vel_msg.angular.z =0;
 	   slave_vel.publish(vel_msg);
@@ -147,7 +184,7 @@ void rotate (double angular_speed, double relative_angle, bool clockwise){
  */
 void move(double speed, double distance, bool isForward){
    geometry_msgs::Twist vel_msg;
-   //set a random linear velocity in the x-axis
+   //set a random linear velocity in the x-axis and condition to determine direction of movement
    if (isForward)
 	   vel_msg.linear.x =abs(speed);
    else
@@ -162,6 +199,7 @@ void move(double speed, double distance, bool isForward){
    double t0 = ros::Time::now().toSec();
    double current_distance = 0.0;
    ros::Rate loop_rate(100);
+   //Condition to teminate movement after raeching the required distance 
    do{
 	   slave_vel.publish(vel_msg);
 	   double t1 = ros::Time::now().toSec();

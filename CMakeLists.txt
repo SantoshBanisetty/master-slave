@@ -199,9 +199,9 @@ add_executable(master src/master.cpp)
 target_link_libraries(master ${catkin_LIBRARIES})
 add_dependencies(master stage_first_generate_messages_cpp)
 
-add_executable(slave src/slave.cpp)
-target_link_libraries(slave ${catkin_LIBRARIES})
-add_dependencies(slave stage_first_generate_messages_cpp)
+#add_executable(slave src/slave.cpp)
+#target_link_libraries(slave ${catkin_LIBRARIES})
+#add_dependencies(slave stage_first_generate_messages_cpp)
 
 add_executable(tf_broadcaster src/tf_broadcaster.cpp)
 target_link_libraries(tf_broadcaster ${catkin_LIBRARIES})

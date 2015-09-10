@@ -1,3 +1,12 @@
+/*
+ * tf_broadcaster.cpp
+ *
+ *  Created on: Aug 27, 2015
+ *      Author: santosh
+ */
+
+//Source file for transformation broadcaster for both the robots
+
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
 #include <nav_msgs/Odometry.h>
@@ -5,26 +14,18 @@
 
 std::string robot_name;
 
-
-
-void poseCallback(const nav_msgs::Odometry::ConstPtr& msg){
+  //call back decleration and implementation for pose
+  void poseCallback(const nav_msgs::Odometry::ConstPtr& msg){
   static tf::TransformBroadcaster br;
   tf::Transform transform;
   transform.setOrigin( tf::Vector3(msg->pose.pose.position.x, msg->pose.pose.position.y, 0.0) );
   tf::Quaternion q;
+  //Quaternion to Roll Pitch and Yaw conversion
   double roll, pitch, yaw;
   tf::Quaternion quat;
   tf::quaternionMsgToTF(msg->pose.pose.orientation, quat);
   tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
 
-  //tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
-  //double q0 = msg->pose.pose.orientation.x;
-  //double q1 = msg->pose.pose.orientation.y;
-  //double q2 = msg->pose.pose.orientation.z;
-  //double q3 = msg->pose.pose.orientation.w;
-  //double rotationx = atan2(2*(q0*q1+q2*q3), 1-2*(pow(q1,2)+pow(q2,2)));
-  //double rotationy = asin(2*(q0*q2 - q3*q1));
-  //double rotationz = atan2(2*(q0*q3+q1*q2), 1-2*(pow(q2,2)+pow(q3,2)));
   q.setRPY(0.0, 0.0, yaw);
   transform.setRotation(q);
   br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_name));
