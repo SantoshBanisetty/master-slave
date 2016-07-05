@@ -2,7 +2,7 @@
 assignment
 
 1. Save the cave.png file in /opt/ros/indigo/share/stage_ros/world directory.
-2. Create a package named stage_first and copy the files from this repository.
+2. Create a package (catkin_create_pkg) named stage_first and copy the files from this repository.
 3. run the following command:
    rosrun stage_ros stageros $(rospack find stage_ros)/world/sim.world
 4. You should see the sim.world file opened in the stage simulator and you will find two robots in it (Blue-Master and Green-Slave)
