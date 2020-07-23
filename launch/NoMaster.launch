@@ -1,0 +1,14 @@
+  <launch>
+    
+    
+  	<node pkg="stage_ros" type="stageros"
+          args="$(find stage_ms)/world/sim.world" name="stage_sim" />
+    <node pkg="stage_ms" type="tf_broadcaster"
+          args="/robot_0" name="robot_0_tf_broadcaster" />
+    <node pkg="stage_ms" type="tf_broadcaster"
+          args="/robot_1" name="robot_1_tf_broadcaster" />
+   
+    
+    <node pkg="stage_ms" type="slave_tf_listener"
+          name="slave" />
+  </launch>
